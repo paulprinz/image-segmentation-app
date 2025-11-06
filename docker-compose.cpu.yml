@@ -1,0 +1,13 @@
+version: '3.8'
+
+# Override file for CPU-only deployment
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.cpu.yml up
+
+services:
+  grounding_dino:
+    deploy:
+      resources: {}  # Remove GPU requirements
+
+  sam2:
+    deploy:
+      resources: {}  # Remove GPU requirements
