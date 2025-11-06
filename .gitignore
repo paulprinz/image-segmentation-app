@@ -52,3 +52,9 @@ uploads/
 
 # Environment
 .env
+
+# Claude Code
+.claude/
+
+# Jupyter notebooks
+*.ipynb
