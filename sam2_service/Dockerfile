@@ -1,5 +1,9 @@
 FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-devel
 
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
 WORKDIR /workspace
 
 # Install system dependencies
@@ -9,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     libgl1-mesa-glx \
     libglib2.0-0 \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone and install SAM2

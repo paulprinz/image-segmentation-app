@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Override file for CPU-only deployment
 # Usage: docker-compose -f docker-compose.yml -f docker-compose.cpu.yml up
 
