@@ -11,8 +11,8 @@ This application consists of 5 microservices orchestrated by Docker Compose:
 │  Streamlit  │─────▶│   FastAPI   │─────▶│  Redis Queue 1   │─────▶│  GroundingDINO   │
 │  Frontend   │      │   Backend   │      │                  │      │    Service       │
 └─────────────┘      └─────────────┘      └──────────────────┘      └──────────────────┘
-                            │                                                 │
-                            │                                                 ▼
+                            │                                                 
+                            │                                                 
                             │              ┌──────────────────┐      ┌──────────────────┐
                             └─────────────▶│  Redis Queue 2   │─────▶│   SAM2 Service   │
                                            └──────────────────┘      └──────────────────┘
