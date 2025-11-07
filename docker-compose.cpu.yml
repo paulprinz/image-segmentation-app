@@ -11,8 +11,12 @@ services:
 
   grounding_dino:
     platform: linux/amd64
-    deploy: {}
+    deploy:
+      resources:
+        reservations: {}
 
   sam2:
     platform: linux/amd64
-    deploy: {}
+    deploy:
+      resources:
+        reservations: {}
