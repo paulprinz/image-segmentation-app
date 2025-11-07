@@ -21,9 +21,11 @@ RUN git clone https://github.com/IDEA-Research/GroundingDINO.git
 WORKDIR /workspace/GroundingDINO
 
 # Install GroundingDINO with specific compatible versions
+# Pin numpy to <2.0 for PyTorch 2.1.0 compatibility
 # Pin transformers to version compatible with PyTorch 2.1.0
-RUN pip install --no-cache-dir -e . && \
-    pip install --no-cache-dir "transformers>=4.36.0,<4.40.0" --force-reinstall
+RUN pip install --no-cache-dir "numpy<2.0" && \
+    pip install --no-cache-dir "transformers>=4.36.0,<4.40.0" && \
+    pip install --no-cache-dir -e .
 
 # Download model weights
 RUN mkdir -p weights && \
