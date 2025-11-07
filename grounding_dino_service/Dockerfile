@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade PyTorch to fix transformers compatibility
-RUN pip install --no-cache-dir --upgrade torch torchvision
+# Pin numpy<2.0 for PyTorch 2.1.0 compatibility BEFORE installing GroundingDINO
+RUN pip install --no-cache-dir "numpy<2.0"
 
 # Clone and install GroundingDINO
 RUN git clone https://github.com/IDEA-Research/GroundingDINO.git
@@ -30,8 +30,8 @@ RUN mkdir -p weights && \
     cd weights && \
     wget -q https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth
 
-# Install additional dependencies and pin numpy to <2.0 for PyTorch 2.1.0 compatibility
-RUN pip install --no-cache-dir "numpy<2.0" redis opencv-python-headless
+# Install additional dependencies
+RUN pip install --no-cache-dir redis opencv-python-headless
 
 # Copy service code
 WORKDIR /workspace

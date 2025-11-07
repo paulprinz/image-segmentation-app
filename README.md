@@ -177,7 +177,7 @@ docker-compose up --build
 Use the provided CPU override file:
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.cpu.yml up --build
+docker-compose -f docker-compose.no-gpu.yml up -d
 ```
 
 **Note**: First build will take 15-30 minutes as it downloads models and installs dependencies.
