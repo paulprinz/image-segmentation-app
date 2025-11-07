@@ -24,8 +24,8 @@ redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_respon
 
 # Load SAM2 model
 print("Loading SAM2 model...")
-# build_sam2 expects just the config name (Hydra will find it in sam2/configs)
-MODEL_CONFIG = "sam2.1/sam2.1_hiera_l"  # No leading slash, no .yaml extension
+# Use the config file path relative to sam2 package
+MODEL_CONFIG = "configs/sam2.1/sam2.1_hiera_l.yaml"
 MODEL_CHECKPOINT = "/workspace/sam2/checkpoints/sam2.1_hiera_large.pt"
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 sam2_model = build_sam2(MODEL_CONFIG, MODEL_CHECKPOINT, device=device)

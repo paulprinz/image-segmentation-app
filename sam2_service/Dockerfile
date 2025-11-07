@@ -19,7 +19,10 @@ RUN apt-get update && apt-get install -y \
 # Clone and install SAM2
 RUN git clone https://github.com/facebookresearch/sam2.git
 WORKDIR /workspace/sam2
-RUN pip install --no-cache-dir -e .
+
+# Install SAM2 with specific torch version that's compatible with both SAM2 and transformers
+RUN pip install --no-cache-dir "torch>=2.1.0,<2.5.0" "torchvision>=0.16.0,<0.20.0" && \
+    pip install --no-cache-dir -e .
 
 # Download model checkpoint
 RUN mkdir -p checkpoints && \

@@ -16,14 +16,14 @@ RUN apt-get update && apt-get install -y \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-# Pin numpy<2.0 for PyTorch 2.1.0 compatibility BEFORE installing GroundingDINO
-RUN pip install --no-cache-dir "numpy<2.0"
-
-# Clone and install GroundingDINO
+# Clone and install GroundingDINO first
 RUN git clone https://github.com/IDEA-Research/GroundingDINO.git
 WORKDIR /workspace/GroundingDINO
 
-RUN pip install --no-cache-dir -e .
+# Install GroundingDINO with specific compatible versions
+# Pin transformers to version compatible with PyTorch 2.1.0
+RUN pip install --no-cache-dir -e . && \
+    pip install --no-cache-dir "transformers>=4.36.0,<4.40.0" --force-reinstall
 
 # Download model weights
 RUN mkdir -p weights && \
