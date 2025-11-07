@@ -81,7 +81,7 @@ async def segment_image(
         redis_client.rpush('grounding_dino_queue', json.dumps(grounding_task))
 
         # Wait for GroundingDINO result (with timeout)
-        timeout = 60  # 60 seconds timeout
+        timeout = 600  # 600 seconds timeout (10 minutes for CPU processing on Apple Silicon)
         start_time = time.time()
 
         while time.time() - start_time < timeout:

@@ -27,7 +27,7 @@ RUN mkdir -p checkpoints && \
     wget -q https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt
 
 # Install additional dependencies
-RUN pip install --no-cache-dir redis matplotlib
+RUN pip install --no-cache-dir redis matplotlib opencv-python-headless
 
 # Copy service code
 WORKDIR /workspace

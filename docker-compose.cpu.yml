@@ -13,10 +13,12 @@ services:
     platform: linux/amd64
     deploy:
       resources:
-        reservations: {}
+        reservations:
+          devices: []
 
   sam2:
     platform: linux/amd64
     deploy:
       resources:
-        reservations: {}
+        reservations:
+          devices: []

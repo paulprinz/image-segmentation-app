@@ -19,6 +19,9 @@ RUN apt-get update && apt-get install -y \
 # Clone and install GroundingDINO
 RUN git clone https://github.com/IDEA-Research/GroundingDINO.git
 WORKDIR /workspace/GroundingDINO
+
+# Fix transformers compatibility issue by pinning version
+RUN pip install --no-cache-dir transformers==4.35.2
 RUN pip install --no-cache-dir -e .
 
 # Download model weights
@@ -27,7 +30,7 @@ RUN mkdir -p weights && \
     wget -q https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth
 
 # Install additional dependencies
-RUN pip install --no-cache-dir redis
+RUN pip install --no-cache-dir redis opencv-python-headless
 
 # Copy service code
 WORKDIR /workspace

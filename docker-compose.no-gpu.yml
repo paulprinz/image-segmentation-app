@@ -1,0 +1,99 @@
+services:
+  # Redis for queue management
+  redis:
+    image: redis:7-alpine
+    container_name: segmentation-redis
+    platform: linux/amd64
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - segmentation-network
+
+  # GroundingDINO Service
+  grounding_dino:
+    build:
+      context: ./grounding_dino_service
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    container_name: segmentation-grounding-dino
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - segmentation-network
+
+  # SAM2 Service
+  sam2:
+    build:
+      context: ./sam2_service
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    container_name: segmentation-sam2
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - segmentation-network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    container_name: segmentation-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - segmentation-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Streamlit Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    container_name: segmentation-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - segmentation-network
+
+networks:
+  segmentation-network:
+    driver: bridge
+
+volumes:
+  redis_data:
