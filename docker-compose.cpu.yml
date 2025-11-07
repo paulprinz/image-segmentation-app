@@ -1,11 +1,18 @@
 # Override file for CPU-only deployment
 # Usage: docker-compose -f docker-compose.yml -f docker-compose.cpu.yml up
+# For Apple Silicon Macs, this also adds platform specification for x86_64 emulation
 
 services:
+  backend:
+    platform: linux/amd64
+
+  frontend:
+    platform: linux/amd64
+
   grounding_dino:
-    deploy:
-      resources: {}  # Remove GPU requirements
+    platform: linux/amd64
+    deploy: {}
 
   sam2:
-    deploy:
-      resources: {}  # Remove GPU requirements
+    platform: linux/amd64
+    deploy: {}
