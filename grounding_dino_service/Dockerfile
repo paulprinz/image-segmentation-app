@@ -16,12 +16,13 @@ RUN apt-get update && apt-get install -y \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
+# Upgrade PyTorch to fix transformers compatibility
+RUN pip install --no-cache-dir --upgrade torch torchvision
+
 # Clone and install GroundingDINO
 RUN git clone https://github.com/IDEA-Research/GroundingDINO.git
 WORKDIR /workspace/GroundingDINO
 
-# Fix transformers compatibility issue by pinning version
-RUN pip install --no-cache-dir transformers==4.35.2
 RUN pip install --no-cache-dir -e .
 
 # Download model weights

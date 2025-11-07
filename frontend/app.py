@@ -112,7 +112,7 @@ with col1:
                     f"{BACKEND_URL}/segment",
                     files=files,
                     data=data,
-                    timeout=120
+                    timeout=700  # 11+ minutes for CPU processing on Apple Silicon
                 )
 
                 if response.status_code == 200:
