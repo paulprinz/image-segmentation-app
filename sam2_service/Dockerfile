@@ -20,9 +20,17 @@ RUN apt-get update && apt-get install -y \
 RUN git clone https://github.com/facebookresearch/sam2.git
 WORKDIR /workspace/sam2
 
-# Install SAM2 with specific torch version that's compatible with both SAM2 and transformers
-RUN pip install --no-cache-dir "torch>=2.1.0,<2.5.0" "torchvision>=0.16.0,<0.20.0" && \
-    pip install --no-cache-dir -e .
+# Patch SAM2's pyproject.toml to accept PyTorch 2.1.0 from base image
+# This avoids downloading 3+ GB of torch>=2.5.1 dependencies
+RUN sed -i 's/torch>=2.5.1/torch>=2.1.0,<2.5.0/' pyproject.toml && \
+    sed -i 's/torchvision>=0.20.1/torchvision>=0.16.0,<0.20.0/' pyproject.toml
+
+# Install SAM2's dependencies that are compatible with torch 2.1.0
+RUN pip install --no-cache-dir \
+    "tqdm>=4.66.1" \
+    "hydra-core>=1.3.2" \
+    "iopath>=0.1.10" && \
+    pip install --no-cache-dir --no-deps -e .
 
 # Download model checkpoint
 RUN mkdir -p checkpoints && \
@@ -30,7 +38,9 @@ RUN mkdir -p checkpoints && \
     wget -q https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt
 
 # Install additional dependencies
-RUN pip install --no-cache-dir redis matplotlib opencv-python-headless
+# Pin matplotlib and opencv-python-headless to versions compatible with numpy<2.0
+RUN pip install --no-cache-dir redis "matplotlib<3.9.0" "opencv-python-headless<4.10.0" && \
+    pip install --no-cache-dir --force-reinstall "numpy<2.0"
 
 # Copy service code
 WORKDIR /workspace

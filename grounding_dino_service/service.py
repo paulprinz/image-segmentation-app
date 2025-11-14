@@ -24,8 +24,11 @@ redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_respon
 print("Loading GroundingDINO model...")
 MODEL_CONFIG = "/workspace/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
 MODEL_CHECKPOINT = "/workspace/GroundingDINO/weights/groundingdino_swint_ogc.pth"
-model = load_model(MODEL_CONFIG, MODEL_CHECKPOINT)
-print("GroundingDINO model loaded successfully!")
+
+# Use CPU to save GPU memory for SAM2 (GPU has only 4GB)
+device = os.getenv('GROUNDING_DINO_DEVICE', 'cpu')
+model = load_model(MODEL_CONFIG, MODEL_CHECKPOINT, device=device)
+print(f"GroundingDINO model loaded successfully on {device}!")
 
 def process_image(image_bytes, text_prompt, box_threshold=0.35, text_threshold=0.25):
     """
