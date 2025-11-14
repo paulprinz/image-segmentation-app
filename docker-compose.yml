@@ -15,7 +15,7 @@ services:
     networks:
       - segmentation-network
 
-  # GroundingDINO Service
+  # GroundingDINO Service (CPU-only to save GPU memory for SAM2)
   grounding_dino:
     build:
       context: ./grounding_dino_service
@@ -30,13 +30,7 @@ services:
     restart: unless-stopped
     networks:
       - segmentation-network
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    # No GPU access - runs on CPU to save GPU memory
 
   # SAM2 Service
   sam2:

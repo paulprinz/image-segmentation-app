@@ -3,7 +3,9 @@ import json
 import uuid
 import base64
 import time
+import io
 import redis
+from PIL import Image
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -61,11 +63,22 @@ async def segment_image(
         # Generate unique task ID
         task_id = str(uuid.uuid4())
 
-        # Read and encode image
+        # Read image and downsample to 256x256 to reduce GPU memory usage
         image_bytes = await image.read()
-        image_b64 = base64.b64encode(image_bytes).decode('utf-8')
+        original_image = Image.open(io.BytesIO(image_bytes))
+        original_size = original_image.size  # (width, height)
+
+        # Resize to 256x256 using high-quality Lanczos resampling
+        resized_image = original_image.resize((256, 256), Image.Resampling.LANCZOS)
+
+        # Convert back to bytes
+        buffer = io.BytesIO()
+        resized_image.save(buffer, format=original_image.format or 'PNG')
+        resized_bytes = buffer.getvalue()
+        image_b64 = base64.b64encode(resized_bytes).decode('utf-8')
 
         print(f"Task {task_id}: Starting segmentation with prompt '{text_prompt}'")
+        print(f"Task {task_id}: Image resized from {original_size} to (256, 256)")
 
         # Stage 1: GroundingDINO Object Detection
         print(f"Task {task_id}: Sending to GroundingDINO...")

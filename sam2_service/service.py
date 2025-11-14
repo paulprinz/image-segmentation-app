@@ -105,13 +105,24 @@ def process_segmentation(image_bytes, boxes):
     # Convert boxes to numpy array
     boxes_np = np.array(boxes)
 
-    # Predict masks
-    masks, scores, _ = predictor.predict(
-        point_coords=None,
-        point_labels=None,
-        box=boxes_np,
-        multimask_output=False,
-    )
+    # Process boxes one at a time to reduce GPU memory usage
+    all_masks = []
+    all_scores = []
+
+    for box in boxes_np:
+        # Predict mask for single box (batch size = 1)
+        masks, scores, _ = predictor.predict(
+            point_coords=None,
+            point_labels=None,
+            box=box.reshape(1, -1),  # Single box: shape (1, 4)
+            multimask_output=False,
+        )
+        all_masks.append(masks[0])  # Extract the single mask
+        all_scores.append(scores[0])  # Extract the single score
+
+    # Combine results
+    masks = np.array(all_masks)
+    scores = np.array(all_scores)
 
     # Create visualization
     viz_bytes = create_segmentation_overlay(image_np, masks, boxes_np)

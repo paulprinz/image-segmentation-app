@@ -26,9 +26,10 @@ MODEL_CONFIG = "/workspace/GroundingDINO/groundingdino/config/GroundingDINO_Swin
 MODEL_CHECKPOINT = "/workspace/GroundingDINO/weights/groundingdino_swint_ogc.pth"
 
 # Use CPU to save GPU memory for SAM2 (GPU has only 4GB)
-device = os.getenv('GROUNDING_DINO_DEVICE', 'cpu')
+# CUDA_VISIBLE_DEVICES="" is set in Dockerfile to force CPU-only mode
+device = 'cpu'
 model = load_model(MODEL_CONFIG, MODEL_CHECKPOINT, device=device)
-print(f"GroundingDINO model loaded successfully on {device}!")
+print(f"GroundingDINO model loaded successfully on {device}!", flush=True)
 
 def process_image(image_bytes, text_prompt, box_threshold=0.35, text_threshold=0.25):
     """
@@ -48,8 +49,9 @@ def process_image(image_bytes, text_prompt, box_threshold=0.35, text_threshold=0
     image_np = np.array(image_pil)
 
     # Prepare image for GroundingDINO
-    # Convert to torch tensor and normalize
+    # Convert to torch tensor and normalize, ensure it's on CPU
     transform_image = torch.from_numpy(image_np).permute(2, 0, 1).float() / 255.0
+    transform_image = transform_image.cpu()  # Ensure CPU
 
     # Get image dimensions
     h, w = image_np.shape[:2]
@@ -60,12 +62,13 @@ def process_image(image_bytes, text_prompt, box_threshold=0.35, text_threshold=0
         image=transform_image,
         caption=text_prompt,
         box_threshold=box_threshold,
-        text_threshold=text_threshold
+        text_threshold=text_threshold,
+        device='cpu'  # Explicitly pass device
     )
 
-    # Convert boxes to xyxy format (needed for SAM2)
-    boxes_unnorm = boxes * torch.Tensor([w, h, w, h])
-    boxes_xyxy = box_convert(boxes=boxes_unnorm, in_fmt="cxcywh", out_fmt="xyxy").numpy()
+    # Convert boxes to xyxy format (needed for SAM2), ensure CPU tensors
+    boxes_unnorm = boxes.cpu() * torch.Tensor([w, h, w, h]).cpu()
+    boxes_xyxy = box_convert(boxes=boxes_unnorm, in_fmt="cxcywh", out_fmt="xyxy").cpu().numpy()
 
     # Prepare result
     result = {
