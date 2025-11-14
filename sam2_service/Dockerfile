@@ -42,6 +42,9 @@ RUN mkdir -p checkpoints && \
 RUN pip install --no-cache-dir redis "matplotlib<3.9.0" "opencv-python-headless<4.10.0" && \
     pip install --no-cache-dir --force-reinstall "numpy<2.0"
 
+# Install Weights & Biases for monitoring
+RUN pip install --no-cache-dir wandb weave
+
 # Copy service code
 WORKDIR /workspace
 COPY service.py /workspace/service.py

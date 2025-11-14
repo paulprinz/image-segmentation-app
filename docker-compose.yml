@@ -24,6 +24,9 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - WANDB_API_KEY=89c46f7e50fe09ca320dd3963692ed486122496d
+      - WANDB_PROJECT=image-segmentation
+      - WANDB_ENTITY=${WANDB_ENTITY:-}
     depends_on:
       redis:
         condition: service_healthy
@@ -41,6 +44,9 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - WANDB_API_KEY=89c46f7e50fe09ca320dd3963692ed486122496d
+      - WANDB_PROJECT=image-segmentation
+      - WANDB_ENTITY=${WANDB_ENTITY:-}
     depends_on:
       redis:
         condition: service_healthy

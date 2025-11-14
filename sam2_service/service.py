@@ -8,13 +8,25 @@ import cv2
 from PIL import Image
 import base64
 import io
+import time
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import wandb
 
 # Add SAM2 to path
 sys.path.append('/workspace/sam2')
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
+
+# Initialize W&B for monitoring
+wandb.init(
+    project="image-segmentation",
+    name="sam2-service",
+    config={
+        "model": "SAM2",
+        "device": "cuda"
+    }
+)
 
 # Redis connection
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
@@ -51,11 +63,12 @@ def create_segmentation_overlay(image_np, masks, boxes):
 
     # Draw masks
     for mask in masks:
-        if len(mask.shape) > 2:
+        # Ensure mask is 2D (H, W)
+        while len(mask.shape) > 2:
             mask = mask.squeeze(0)
 
         color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
-        h, w = mask.shape[-2:]
+        h, w = mask.shape
         mask = mask.astype(np.uint8)
         mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
 
@@ -95,21 +108,27 @@ def process_segmentation(image_bytes, boxes):
     Returns:
         Dictionary containing segmentation masks and visualization
     """
+    start_time = time.time()
+
     # Convert bytes to PIL Image then to numpy
     image_pil = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     image_np = np.array(image_pil)
+    h, w = image_np.shape[:2]
 
     # Set image for SAM2
     predictor.set_image(image_np)
 
     # Convert boxes to numpy array
     boxes_np = np.array(boxes)
+    num_boxes = len(boxes_np)
 
     # Process boxes one at a time to reduce GPU memory usage
     all_masks = []
     all_scores = []
+    box_times = []
 
     for box in boxes_np:
+        box_start = time.time()
         # Predict mask for single box (batch size = 1)
         masks, scores, _ = predictor.predict(
             point_coords=None,
@@ -119,6 +138,7 @@ def process_segmentation(image_bytes, boxes):
         )
         all_masks.append(masks[0])  # Extract the single mask
         all_scores.append(scores[0])  # Extract the single score
+        box_times.append(time.time() - box_start)
 
     # Combine results
     masks = np.array(all_masks)
@@ -127,13 +147,27 @@ def process_segmentation(image_bytes, boxes):
     # Create visualization
     viz_bytes = create_segmentation_overlay(image_np, masks, boxes_np)
 
+    inference_time = time.time() - start_time
+
+    # Log metrics to W&B
+    wandb.log({
+        'sam2/inference_time': inference_time,
+        'sam2/num_boxes': num_boxes,
+        'sam2/avg_time_per_box': np.mean(box_times) if box_times else 0,
+        'sam2/avg_mask_score': float(scores.mean()) if len(scores) > 0 else 0.0,
+        'sam2/image_size': f"{w}x{h}",
+        'sam2/gpu_memory_mb': torch.cuda.memory_allocated() / 1024 / 1024 if torch.cuda.is_available() else 0
+    })
+
     # Convert masks to list (for JSON serialization)
-    masks_list = [mask.squeeze(0).astype(np.uint8).tolist() for mask in masks]
+    # Masks are already (H, W) shape from individual processing, no need to squeeze
+    masks_list = [mask.astype(np.uint8).tolist() for mask in masks]
 
     result = {
         'masks': masks_list,
         'scores': scores.tolist(),
-        'visualization': base64.b64encode(viz_bytes).decode('utf-8')
+        'visualization': base64.b64encode(viz_bytes).decode('utf-8'),
+        'inference_time': inference_time
     }
 
     return result

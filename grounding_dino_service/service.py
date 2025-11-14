@@ -8,11 +8,23 @@ import cv2
 from PIL import Image
 import base64
 import io
+import time
 from torchvision.ops import box_convert
+import wandb
 
 # Add GroundingDINO to path
 sys.path.append('/workspace/GroundingDINO')
 from groundingdino.util.inference import load_model, predict
+
+# Initialize W&B for monitoring
+wandb.init(
+    project="image-segmentation",
+    name="grounding-dino-service",
+    config={
+        "model": "GroundingDINO",
+        "device": "cpu"
+    }
+)
 
 # Redis connection
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
@@ -44,6 +56,8 @@ def process_image(image_bytes, text_prompt, box_threshold=0.35, text_threshold=0
     Returns:
         Dictionary containing bounding boxes, scores, and labels
     """
+    start_time = time.time()
+
     # Convert bytes to PIL Image
     image_pil = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     image_np = np.array(image_pil)
@@ -70,12 +84,24 @@ def process_image(image_bytes, text_prompt, box_threshold=0.35, text_threshold=0
     boxes_unnorm = boxes.cpu() * torch.Tensor([w, h, w, h]).cpu()
     boxes_xyxy = box_convert(boxes=boxes_unnorm, in_fmt="cxcywh", out_fmt="xyxy").cpu().numpy()
 
+    inference_time = time.time() - start_time
+
+    # Log metrics to W&B
+    wandb.log({
+        'grounding_dino/inference_time': inference_time,
+        'grounding_dino/num_detections': len(boxes_xyxy),
+        'grounding_dino/avg_confidence': float(logits.mean()) if len(logits) > 0 else 0.0,
+        'grounding_dino/image_size': f"{w}x{h}",
+        'grounding_dino/prompt': text_prompt
+    })
+
     # Prepare result
     result = {
         'boxes': boxes_xyxy.tolist(),
         'scores': logits.numpy().tolist(),
         'labels': phrases,
-        'image_shape': [h, w]
+        'image_shape': [h, w],
+        'inference_time': inference_time
     }
 
     return result
